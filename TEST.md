@@ -34,7 +34,7 @@ cat .env
 ./build_docker.sh
 
 # При ошибках PyTorch/CUDA - быстрое исправление
-./quick_fix.sh && ./test_build.sh
+./quick_fix.sh
 
 # Принудительно GPU (если есть)
 ./build_docker.sh --gpu
@@ -82,7 +82,7 @@ cat result.txt
 ### Проблемы с образами
 ```bash
 # При ошибках PyTorch/CUDA - быстрое исправление
-./quick_fix.sh && ./test_build.sh
+./quick_fix.sh
 
 # При ошибках CUDA образов
 ./fix_docker.sh
@@ -154,7 +154,7 @@ docker system prune -a -f
 
 | Проблема | Команда решения |
 |----------|-----------------|
-| PyTorch/CUDA ошибки | `./quick_fix.sh && ./test_build.sh` |
+| PyTorch/CUDA ошибки | `./quick_fix.sh` |
 | CUDA образ не найден | `./fix_docker.sh` |
 | Порт занят | `./run_docker.sh -p 9000 start` |
 | GPU недоступен | `./run_docker.sh --cpu start` |
@@ -167,7 +167,7 @@ docker system prune -a -f
 # Полный цикл тестирования одной командой
 ./test_system.sh && \
 echo "=== BUILDING ===" && \
-(./build_docker.sh || (./quick_fix.sh && ./test_build.sh)) && \
+(./build_docker.sh || ./quick_fix.sh) && \
 echo "=== STARTING ===" && \
 ./run_docker.sh start && \
 echo "=== TESTING API ===" && \

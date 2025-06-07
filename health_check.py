@@ -56,7 +56,7 @@ class HealthChecker:
         
         try:
             # Тестовые данные
-            test_data = b"Hello, World! Тест шифрования."
+            test_data = "Hello, World! Тест шифрования.".encode('utf-8')
             test_key = secrets.token_bytes(32)
             
             # Шифрование

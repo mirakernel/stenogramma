@@ -56,11 +56,7 @@ show_help() {
     echo "  $0 --stable          # Стабильная версия с максимальной совместимостью"
     echo "  $0 --gpu --no-cache  # GPU версия без кэша"
 }
-</edits>
 
-<edits>
-
-<old_text>
 # Выбор Dockerfile
 select_dockerfile() {
     if [ "$FORCE_STABLE" = true ]; then
@@ -391,7 +387,6 @@ print_usage_instructions() {
         echo "   • Для CPU сборки: $0 --cpu"
     fi
     echo "   • Не забудьте настроить .env файл"
-</edits>
 }
 
 # Парсинг аргументов
@@ -413,8 +408,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --no-cache)
-        --cpu)
-            FORCE_CPU=true
+            NO_CACHE=true
             shift
             ;;
         --stable)
@@ -455,37 +449,6 @@ if [ $OPTION_COUNT -gt 1 ]; then
     print_error "Нельзя одновременно указать --gpu, --cpu и --stable"
     exit 1
 fi
-</edits>
-
-<edits>
-
-<old_text>
-    echo "2. Запуск контейнера:"
-    
-    if [ "$BUILD_TYPE" = "GPU" ]; then
-        echo -e "${BLUE}   # С GPU поддержкой:${NC}"
-        echo "   docker run -d \\"
-        echo "     --name stenogramma \\"
-        echo "     --gpus all \\"
-        echo "     -p 8000:8000 \\"
-        echo "     --env-file .env \\"
-        echo "     --restart unless-stopped \\"
-        echo "     $FULL_IMAGE_NAME"
-        echo
-        echo -e "${YELLOW}   # Альтернативно через run_docker.sh:${NC}"
-        echo "   ./run_docker.sh start"
-    else
-        echo -e "${YELLOW}   # CPU режим:${NC}"
-        echo "   docker run -d \\"
-        echo "     --name stenogramma \\"
-        echo "     -p 8000:8000 \\"
-        echo "     --env-file .env \\"
-        echo "     --restart unless-stopped \\"
-        echo "     $FULL_IMAGE_NAME"
-        echo
-        echo -e "${YELLOW}   # Альтернативно через run_docker.sh:${NC}"
-        echo "   ./run_docker.sh -i $FULL_IMAGE_NAME start"
-    fi
 
 # Основная логика
 main() {

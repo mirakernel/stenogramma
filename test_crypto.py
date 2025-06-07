@@ -12,7 +12,7 @@ def test_basic_encryption():
     print("🔐 Тестирование базового шифрования...")
     
     # Тестовые данные
-    test_data = b"Hello, World! Это тест шифрования на русском языке."
+    test_data = "Hello, World! Это тест шифрования на русском языке.".encode('utf-8')
     test_key = secrets.token_bytes(32)  # 256-bit ключ
     
     try:
@@ -41,7 +41,7 @@ def test_different_keys():
     """Тест с разными ключами"""
     print("\n🔑 Тестирование с разными ключами...")
     
-    test_data = b"Secret message"
+    test_data = "Secret message".encode('utf-8')
     key1 = secrets.token_bytes(32)
     key2 = secrets.token_bytes(32)
     
@@ -67,7 +67,7 @@ def test_large_data():
     print("\n📊 Тестирование больших данных...")
     
     # Создаем данные размером ~1MB
-    test_data = b"A" * (1024 * 1024)
+    test_data = ("A" * (1024 * 1024)).encode('utf-8')
     test_key = secrets.token_bytes(32)
     
     try:
@@ -89,7 +89,7 @@ def test_empty_data():
     """Тест с пустыми данными"""
     print("\n📭 Тестирование пустых данных...")
     
-    test_data = b""
+    test_data = "".encode('utf-8')
     test_key = secrets.token_bytes(32)
     
     try:

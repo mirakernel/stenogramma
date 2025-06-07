@@ -111,10 +111,9 @@ EOF
 
 echo "✅ Dockerfile исправлен с fallback PyTorch установкой"
 
-# Создание простого тестового скрипта
-cat > test_build.sh << 'EOF'
-#!/bin/bash
-echo "🧪 Тестирование сборки..."
+echo "✅ Dockerfile исправлен и готов к сборке"
+echo ""
+echo "🔨 Тестирование сборки..."
 
 # Проверка ключей
 if [ ! -f ".env" ]; then
@@ -124,22 +123,18 @@ fi
 
 # Сборка образа
 echo "🔨 Сборка Docker образа..."
-docker build -t stenogramma:test .
+docker build -t stenogramma:latest .
 
 if [ $? -eq 0 ]; then
     echo "✅ Сборка успешна!"
-    echo "🚀 Попробуйте запустить: ./run_docker.sh start"
+    echo "🚀 Теперь можете запустить: ./run_docker.sh start"
 else
     echo "❌ Ошибка сборки"
+    echo "Попробуйте: ./build_docker.sh --cpu"
     exit 1
 fi
-EOF
-
-chmod +x test_build.sh
-
-echo "✅ Создан test_build.sh для проверки сборки"
 echo ""
 echo "📋 Следующие шаги:"
 echo "1. ./quick_fix.sh (этот скрипт уже выполнен)"
-echo "2. ./test_build.sh"
-echo "3. ./run_docker.sh start"
+echo "2. ./run_docker.sh start"
+echo "3. curl http://localhost:8000/endpoint_info"
