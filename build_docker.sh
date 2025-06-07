@@ -44,6 +44,7 @@ show_help() {
     echo "ОПЦИИ:"
     echo "  --gpu           Принудительно использовать GPU образ"
     echo "  --cpu           Принудительно использовать CPU образ"
+    echo "  --stable        Использовать стабильную версию (Dockerfile.stable)"
     echo "  --no-cache      Сборка без кэша"
     echo "  --tag TAG       Пользовательский тег образа"
     echo "  --test          Только тестирование после сборки"
@@ -52,7 +53,68 @@ show_help() {
     echo "Примеры:"
     echo "  $0                    # Автоматический выбор GPU/CPU"
     echo "  $0 --cpu             # Принудительно CPU версия"
+    echo "  $0 --stable          # Стабильная версия с максимальной совместимостью"
     echo "  $0 --gpu --no-cache  # GPU версия без кэша"
+}
+</edits>
+
+<edits>
+
+<old_text>
+# Выбор Dockerfile
+select_dockerfile() {
+    if [ "$FORCE_STABLE" = true ]; then
+        if [ ! -f "Dockerfile.stable" ]; then
+            print_error "Dockerfile.stable не найден!"
+            exit 1
+        fi
+        DOCKERFILE="Dockerfile.stable"
+        BUILD_TYPE="STABLE"
+        IMAGE_SUFFIX="-stable"
+    elif [ "$FORCE_GPU" = true ]; then
+        if [ ! -f "Dockerfile" ]; then
+            print_error "Dockerfile не найден!"
+            exit 1
+        fi
+        DOCKERFILE="Dockerfile"
+        BUILD_TYPE="GPU"
+        IMAGE_SUFFIX=""
+    elif [ "$FORCE_CPU" = true ]; then
+        if [ ! -f "Dockerfile.cpu" ]; then
+            print_error "Dockerfile.cpu не найден!"
+            exit 1
+        fi
+        DOCKERFILE="Dockerfile.cpu"
+        BUILD_TYPE="CPU"
+        IMAGE_SUFFIX="-cpu"
+    else
+        # Автоматический выбор
+        if check_nvidia_docker; then
+            if [ -f "Dockerfile" ]; then
+                DOCKERFILE="Dockerfile"
+                BUILD_TYPE="GPU"
+                IMAGE_SUFFIX=""
+                print_success "Выбран GPU образ (автоматически)"
+            else
+                print_warning "Dockerfile не найден, переключение на CPU"
+                DOCKERFILE="Dockerfile.cpu"
+                BUILD_TYPE="CPU"
+                IMAGE_SUFFIX="-cpu"
+            fi
+        else
+            if [ -f "Dockerfile.cpu" ]; then
+                DOCKERFILE="Dockerfile.cpu"
+                BUILD_TYPE="CPU"
+                IMAGE_SUFFIX="-cpu"
+                print_success "Выбран CPU образ (автоматически)"
+            else
+                print_error "Ни один Dockerfile не найден!"
+                exit 1
+            fi
+        fi
+    fi
+    
+    print_info "Используется: $DOCKERFILE для $BUILD_TYPE сборки"
 }
 
 # Проверка Docker
@@ -318,29 +380,45 @@ print_usage_instructions() {
     echo "   • Размер: $IMAGE_SIZE"
     if [ "$BUILD_TYPE" = "CPU" ]; then
         echo "   • CPU режим: обработка будет медленнее"
-        echo "   • Для GPU сборки: $0 --gpu"
+        echo "   • Для GPU сборки: $0 --gpu или $0 --stable"
+    elif [ "$BUILD_TYPE" = "STABLE" ]; then
+        echo "   • STABLE режим: максимальная совместимость с fallback"
+        echo "   • Для чистого GPU: $0 --gpu"
+        echo "   • Для CPU только: $0 --cpu"
     else
         echo "   • GPU режим: требует NVIDIA драйверы"
+        echo "   • Для стабильной версии: $0 --stable"
         echo "   • Для CPU сборки: $0 --cpu"
     fi
     echo "   • Не забудьте настроить .env файл"
+</edits>
 }
 
 # Парсинг аргументов
 FORCE_GPU=false
 FORCE_CPU=false
+FORCE_STABLE=false
 NO_CACHE=false
 CUSTOM_TAG=""
 TEST_ONLY=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --gpu)
-            FORCE_GPU=true
-            shift
-            ;;
         --cpu)
             FORCE_CPU=true
+            shift
+            ;;
+        --stable)
+            FORCE_STABLE=true
+            shift
+            ;;
+        --no-cache)
+        --cpu)
+            FORCE_CPU=true
+            shift
+            ;;
+        --stable)
+            FORCE_STABLE=true
             shift
             ;;
         --no-cache)
@@ -368,10 +446,46 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Проверка конфликтующих опций
-if [ "$FORCE_GPU" = true ] && [ "$FORCE_CPU" = true ]; then
-    print_error "Нельзя одновременно указать --gpu и --cpu"
+OPTION_COUNT=0
+[ "$FORCE_GPU" = true ] && OPTION_COUNT=$((OPTION_COUNT + 1))
+[ "$FORCE_CPU" = true ] && OPTION_COUNT=$((OPTION_COUNT + 1))
+[ "$FORCE_STABLE" = true ] && OPTION_COUNT=$((OPTION_COUNT + 1))
+
+if [ $OPTION_COUNT -gt 1 ]; then
+    print_error "Нельзя одновременно указать --gpu, --cpu и --stable"
     exit 1
 fi
+</edits>
+
+<edits>
+
+<old_text>
+    echo "2. Запуск контейнера:"
+    
+    if [ "$BUILD_TYPE" = "GPU" ]; then
+        echo -e "${BLUE}   # С GPU поддержкой:${NC}"
+        echo "   docker run -d \\"
+        echo "     --name stenogramma \\"
+        echo "     --gpus all \\"
+        echo "     -p 8000:8000 \\"
+        echo "     --env-file .env \\"
+        echo "     --restart unless-stopped \\"
+        echo "     $FULL_IMAGE_NAME"
+        echo
+        echo -e "${YELLOW}   # Альтернативно через run_docker.sh:${NC}"
+        echo "   ./run_docker.sh start"
+    else
+        echo -e "${YELLOW}   # CPU режим:${NC}"
+        echo "   docker run -d \\"
+        echo "     --name stenogramma \\"
+        echo "     -p 8000:8000 \\"
+        echo "     --env-file .env \\"
+        echo "     --restart unless-stopped \\"
+        echo "     $FULL_IMAGE_NAME"
+        echo
+        echo -e "${YELLOW}   # Альтернативно через run_docker.sh:${NC}"
+        echo "   ./run_docker.sh -i $FULL_IMAGE_NAME start"
+    fi
 
 # Основная логика
 main() {

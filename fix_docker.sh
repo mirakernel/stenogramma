@@ -52,8 +52,8 @@ CUDA_IMAGES=(
 
 # Соответствующие PyTorch индексы
 declare -A PYTORCH_INDICES=(
-    ["nvidia/cuda:12.9.0-runtime-ubuntu22.04"]="cu124"
-    ["nvidia/cuda:12.9.0-base-ubuntu22.04"]="cu124"
+    ["nvidia/cuda:12.9.0-runtime-ubuntu22.04"]="cu121"
+    ["nvidia/cuda:12.9.0-base-ubuntu22.04"]="cu121"
     ["nvidia/cuda:12.2-runtime-ubuntu22.04"]="cu121"
     ["nvidia/cuda:12.1-runtime-ubuntu22.04"]="cu121"
     ["nvidia/cuda:12.0-runtime-ubuntu22.04"]="cu118"
@@ -182,15 +182,22 @@ EOF
 
     if [ "$pytorch_index" = "cpu" ]; then
         cat >> "$dockerfile" << EOF
-RUN pip3 install --no-cache-dir --upgrade pip \\
-    && pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu \\
-    && pip3 install --no-cache-dir -r requirements.txt
+# Установка PyTorch для CPU
+RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu || \\
+    pip3 install --no-cache-dir torch torchvision torchaudio
+
+# Установка остальных зависимостей
+RUN pip3 install --no-cache-dir -r requirements.txt
 EOF
     else
         cat >> "$dockerfile" << EOF
-RUN pip3 install --no-cache-dir --upgrade pip \\
-    && pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/$pytorch_index \\
-    && pip3 install --no-cache-dir -r requirements.txt
+# Установка PyTorch для GPU с fallback
+RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/$pytorch_index || \\
+    pip3 install --no-cache-dir torch torchvision torchaudio || \\
+    pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+# Установка остальных зависимостей
+RUN pip3 install --no-cache-dir -r requirements.txt
 EOF
     fi
 

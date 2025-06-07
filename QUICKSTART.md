@@ -22,6 +22,9 @@ python3 generate_production_env.py
 # Автоматическая сборка (рекомендуется)
 ./build_docker.sh
 
+# При ошибках PyTorch/CUDA - быстрое исправление
+./quick_fix.sh && ./test_build.sh
+
 # При проблемах с CUDA образами - автоисправление
 ./fix_docker.sh && ./build_docker.sh
 
@@ -30,6 +33,25 @@ python3 generate_production_env.py
 
 # Принудительно GPU версия (если доступна)
 ./build_docker.sh --gpu
+```
+</edits>
+
+<old_text>
+### Ошибки Docker образов
+```bash
+# "nvidia/cuda:11.8-devel-ubuntu22.04: not found"
+./fix_docker.sh
+
+# Автоматическое исправление и пересборка
+./fix_docker.sh && ./build_docker.sh
+
+# Принудительная CPU сборка (всегда работает)
+./build_docker.sh --cpu
+
+# Очистка всех образов и пересборка
+docker system prune -a -f
+./fix_docker.sh
+./build_docker.sh
 ```
 </edits>
 
@@ -118,7 +140,7 @@ git clone <repository-url> && cd stenogramma && python3 generate_keys.py && ./fi
 git clone <repository-url> && cd stenogramma && python3 generate_keys.py && ./build_docker.sh --cpu && ./run_docker.sh --cpu start
 
 # При ошибках Docker образов
-git clone <repository-url> && cd stenogramma && python3 generate_keys.py && ./fix_docker.sh && ./build_docker.sh && ./run_docker.sh start
+git clone <repository-url> && cd stenogramma && python3 generate_keys.py && ./quick_fix.sh && ./test_build.sh && ./run_docker.sh start
 ```
 </edits>
 
@@ -139,6 +161,9 @@ echo "Port 8000: $(curl -s http://localhost:8000/endpoint_info && echo 'OK' || e
 ## Устранение проблем "из коробки"
 
 ```bash
+# Быстрое исправление PyTorch проблем
+./quick_fix.sh && ./test_build.sh
+
 # Универсальный фиксер всех проблем
 ./fix_docker.sh
 
@@ -146,10 +171,11 @@ echo "Port 8000: $(curl -s http://localhost:8000/endpoint_info && echo 'OK' || e
 docker system prune -a -f
 rm -rf .env Dockerfile*
 python3 generate_keys.py
-./fix_docker.sh
-./build_docker.sh --cpu
-./run_docker.sh --cpu start
+./quick_fix.sh
+./test_build.sh
+./run_docker.sh start
 ```
+</edits>
 
 ### Проверка всех компонентов
 ```bash

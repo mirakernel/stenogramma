@@ -44,6 +44,9 @@ python3 generate_production_env.py
 # Автоматическая сборка (рекомендуется для CUDA 12.9.0+)
 ./build_docker.sh
 
+# При ошибках PyTorch/CUDA - быстрое исправление
+./quick_fix.sh && ./test_build.sh
+
 # При ошибках CUDA образов - автоисправление
 ./fix_docker.sh && ./build_docker.sh
 
@@ -252,6 +255,13 @@ python3 generate_keys.py
 ./run_docker.sh --cpu start
 ```
 
+**Ошибка**: `failed to solve: process "/bin/sh -c pip3 install...` (PyTorch)
+```bash
+# Решение: Быстрое исправление PyTorch проблем
+./quick_fix.sh
+./test_build.sh
+```
+
 **Ошибка**: `nvidia/cuda:11.8-devel-ubuntu22.04: not found`
 ```bash
 # Решение: Автоисправление Docker образов
@@ -393,7 +403,8 @@ python3 test_crypto.py
 6. ✅ `./run_docker.sh status`
 7. ✅ Тест: `python3 client.py test_audio.wav`
 
-**При проблемах**: см. [TEST.md](TEST.md) для подробной диагностики
+**При проблемах сборки**: `./quick_fix.sh && ./test_build.sh`  
+**Для диагностики**: см. [TEST.md](TEST.md) для подробной диагностики
 
 ## 📄 Лицензия и безопасность
 

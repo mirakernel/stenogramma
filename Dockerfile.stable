@@ -37,9 +37,10 @@ RUN useradd -m -u 1000 -s /bin/bash appuser \
     && mkdir -p /app/temp /app/logs \
     && chown -R appuser:appuser /app
 
-# Установка PyTorch с fallback стратегией
+# Установка PyTorch с fallback стратегией (последовательные попытки)
 RUN pip3 install --no-cache-dir torch torchvision torchaudio || \
     pip3 install --no-cache-dir torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 || \
+    pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118 || \
     pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 
 # Копирование requirements и установка остальных зависимостей
@@ -53,8 +54,9 @@ RUN chown -R appuser:appuser /app
 # Переключение на пользователя appuser
 USER appuser
 
-# Предзагрузка модели Whisper (базовая модель для тестирования)
-RUN python3 -c "from faster_whisper import WhisperModel; WhisperModel('base', device='cpu', compute_type='int8')" || true
+# Предзагрузка модели Whisper с fallback
+RUN python3 -c "from faster_whisper import WhisperModel; WhisperModel('base', device='cpu', compute_type='int8')" || \
+    python3 -c "print('Whisper model preload skipped - will download on first use')"
 
 # Создание точки входа
 RUN echo '#!/bin/bash\n\
@@ -67,13 +69,13 @@ if [ -z "$SECRET_ENDPOINT" ] || [ -z "$KEY_DECRYPT" ] || [ -z "$KEY_ENCRYPT" ]; 
     exit 1\n\
 fi\n\
 \n\
-# Проверка PyTorch\n\
-python3 -c "import torch; print(f\"🔥 PyTorch: {torch.__version__}\"); print(f\"🎮 CUDA: {torch.cuda.is_available()}\")" || echo "⚠️ PyTorch проблема"\n\
+# Проверка PyTorch и устройств\n\
+python3 -c "import torch; print(f\"🔥 PyTorch: {torch.__version__}\"); print(f\"🎮 CUDA available: {torch.cuda.is_available()}\"); print(f\"📱 CUDA devices: {torch.cuda.device_count() if torch.cuda.is_available() else 0}\")" || echo "⚠️ PyTorch check failed"\n\
 \n\
-# Проверка GPU\n\
+# Проверка GPU (optional)\n\
 if command -v nvidia-smi &> /dev/null; then\n\
     echo "🎮 GPU Information:"\n\
-    nvidia-smi --query-gpu=name,memory.total --format=csv,noheader,nounits | head -1 || echo "GPU недоступен"\n\
+    nvidia-smi --query-gpu=name,memory.total,memory.used --format=csv,noheader,nounits | head -1 || echo "GPU info unavailable"\n\
 else\n\
     echo "⚠️ GPU не обнаружен, используется CPU"\n\
 fi\n\
