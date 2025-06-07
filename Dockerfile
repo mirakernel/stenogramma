@@ -19,8 +19,6 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     pkg-config \
     libffi-dev \
-    libcudnn8 \
-    libcudnn8-dev \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
