@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
+FROM pytorch/pytorch:2.1.0-cuda11.8-cudnn8-devel
 
 # Отключение интерактивных запросов во время сборки
 ENV DEBIAN_FRONTEND=noninteractive
@@ -7,27 +7,16 @@ ENV PYTHONDONTWRITEBYTECODE=1
 
 # Установка системных зависимостей
 RUN apt-get update && apt-get install -y \
-    python3.10 \
-    python3.10-dev \
-    python3-pip \
-    python3.10-venv \
     ffmpeg \
     libsndfile1 \
     curl \
     wget \
     git \
-    build-essential \
-    pkg-config \
-    libffi-dev \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# Создание символической ссылки для python
-RUN ln -sf /usr/bin/python3.10 /usr/bin/python3 \
-    && ln -sf /usr/bin/python3.10 /usr/bin/python
-
 # Обновление pip
-RUN python3 -m pip install --upgrade pip setuptools wheel
+RUN pip install --upgrade pip setuptools wheel
 
 # Создание рабочей директории
 WORKDIR /app
@@ -37,12 +26,11 @@ RUN useradd -m -u 1000 -s /bin/bash appuser \
     && mkdir -p /app/temp /app/logs \
     && chown -R appuser:appuser /app
 
-# Установка PyTorch для CUDA 11.8
-RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+# PyTorch уже установлен в базовом образе
 
 # Копирование requirements и установка остальных зависимостей
 COPY requirements.txt /app/
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Копирование кода приложения
 COPY app.py crypto_utils.py /app/
@@ -52,7 +40,7 @@ RUN chown -R appuser:appuser /app
 USER appuser
 
 # Предзагрузка модели Whisper (базовая модель для тестирования)
-RUN python3 -c "from faster_whisper import WhisperModel; WhisperModel('base', device='cpu', compute_type='int8')" || true
+RUN python -c "from faster_whisper import WhisperModel; WhisperModel('base', device='cpu', compute_type='int8')" || true
 
 # Создание точки входа
 RUN echo '#!/bin/bash\n\
@@ -66,7 +54,7 @@ if [ -z "$SECRET_ENDPOINT" ] || [ -z "$KEY_DECRYPT" ] || [ -z "$KEY_ENCRYPT" ]; 
 fi\n\
 \n\
 # Проверка PyTorch\n\
-python3 -c "import torch; print(f\"🔥 PyTorch: {torch.__version__}\"); print(f\"🎮 CUDA: {torch.cuda.is_available()}\")" || echo "⚠️ PyTorch проблема"\n\
+python -c "import torch; print(f\"🔥 PyTorch: {torch.__version__}\"); print(f\"🎮 CUDA: {torch.cuda.is_available()}\")" || echo "⚠️ PyTorch проблема"\n\
 \n\
 # Проверка GPU\n\
 if command -v nvidia-smi &> /dev/null; then\n\
