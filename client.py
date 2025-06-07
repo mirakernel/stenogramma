@@ -69,7 +69,7 @@ def send_to_server(encrypted_data, server_url, endpoint, original_filename):
             'file': (f"encrypted_{original_filename}", encrypted_data, 'audio/wav')
         }
         
-        response = requests.post(url, files=files, timeout=300)  # 5 минут таймаут
+        response = requests.post(url, files=files, timeout=1300)  # 15 минут таймаут
         
         if response.status_code == 200:
             print("✅ Файл успешно обработан сервером")
