@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.9.0-devel-ubuntu22.04
+FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
 
 # Отключение интерактивных запросов во время сборки
 ENV DEBIAN_FRONTEND=noninteractive
@@ -39,10 +39,8 @@ RUN useradd -m -u 1000 -s /bin/bash appuser \
     && mkdir -p /app/temp /app/logs \
     && chown -R appuser:appuser /app
 
-# Установка PyTorch с fallback стратегией
-RUN pip3 install --no-cache-dir torch torchvision torchaudio || \
-    pip3 install --no-cache-dir torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 || \
-    pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+# Установка PyTorch для CUDA 11.8
+RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
 # Копирование requirements и установка остальных зависимостей
 COPY requirements.txt /app/
