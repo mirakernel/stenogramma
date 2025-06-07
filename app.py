@@ -1,5 +1,6 @@
 import os
 import secrets
+import torch
 from fastapi import FastAPI, UploadFile, HTTPException, Response
 from faster_whisper import WhisperModel
 from crypto_utils import encrypt_data, decrypt_data
@@ -10,26 +11,43 @@ app = FastAPI()
 ENDPOINT = os.getenv("SECRET_ENDPOINT", secrets.token_urlsafe(32))
 
 # Загрузка ключей из переменных окружения
-KEY_DECRYPT = os.getenv("KEY_DECRYPT").encode('utf-8')  # Для входящих файлов
-KEY_ENCRYPT = os.getenv("KEY_ENCRYPT").encode('utf-8')  # Для исходящих текстов
+KEY_DECRYPT_STR = os.getenv("KEY_DECRYPT")
+KEY_ENCRYPT_STR = os.getenv("KEY_ENCRYPT")
 
 # Проверка инициализации ключей
-if not KEY_DECRYPT or not KEY_ENCRYPT:
+if not KEY_DECRYPT_STR or not KEY_ENCRYPT_STR:
     raise RuntimeError("Encryption keys not configured!")
 
-# Инициализация модели Whisper
+KEY_DECRYPT = KEY_DECRYPT_STR.encode('utf-8')  # Для входящих файлов
+KEY_ENCRYPT = KEY_ENCRYPT_STR.encode('utf-8')  # Для исходящих текстов
+
+# Инициализация модели Whisper с автоопределением устройства
 model_size = "large-v3"
+device = "cuda" if torch.cuda.is_available() else "cpu"
+compute_type = "float16" if torch.cuda.is_available() else "int8"
+
+print(f"🎯 Инициализация Whisper модели: {model_size}")
+print(f"🖥️  Устройство: {device}")
+print(f"⚙️  Тип вычислений: {compute_type}")
+
 model = WhisperModel(
     model_size,
-    device="cuda",
-    compute_type="float16"
+    device=device,
+    compute_type=compute_type
 )
 
 @app.post(f"/{ENDPOINT}")
 async def process_lecture(file: UploadFile):
     # 1. Проверка типа файла
-    if not file.filename.endswith('.wav'):
+    if not file.filename or not file.filename.endswith('.wav'):
         raise HTTPException(400, "Only .wav files accepted")
+
+    # Создание директории для временных файлов
+    temp_dir = "temp"
+    os.makedirs(temp_dir, exist_ok=True)
+    
+    # Генерация имени временного файла
+    temp_filename = os.path.join(temp_dir, f"temp_audio_{secrets.token_urlsafe(8)}.wav")
 
     try:
         # 2. Расшифровка аудио
@@ -37,12 +55,12 @@ async def process_lecture(file: UploadFile):
         decrypted_audio = decrypt_data(encrypted_audio, KEY_DECRYPT)
 
         # 3. Сохранение во временный файл
-        with open("temp_audio.wav", "wb") as f:
+        with open(temp_filename, "wb") as f:
             f.write(decrypted_audio)
 
         # 4. Транскрибация
         segments, _ = model.transcribe(
-            "temp_audio.wav",
+            temp_filename,
             language="ru",
             beam_size=5,
             vad_filter=True
@@ -54,7 +72,8 @@ async def process_lecture(file: UploadFile):
         encrypted_result = encrypt_data(transcript.encode('utf-8'), KEY_ENCRYPT)
 
         # 6. Очистка
-        os.remove("temp_audio.wav")
+        if os.path.exists(temp_filename):
+            os.remove(temp_filename)
 
         return Response(
             content=encrypted_result,
@@ -63,6 +82,9 @@ async def process_lecture(file: UploadFile):
         )
 
     except Exception as e:
+        # Очистка в случае ошибки
+        if os.path.exists(temp_filename):
+            os.remove(temp_filename)
         raise HTTPException(500, f"Processing error: {str(e)}")
 
 @app.get("/endpoint_info")

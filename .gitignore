@@ -1,0 +1,88 @@
+# Переменные окружения и ключи
+.env
+.env.*
+!.env.example
+
+# Временные и аудио файлы
+temp/
+*.wav
+*.mp3
+*.mp4
+*.m4a
+*.flac
+encrypted_*
+temp_audio_*
+
+# Результаты транскрибации
+transcript*.txt
+*.bin
+encrypted_result.*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Docker
+.dockerignore
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Rope project settings
+.ropeproject/
+
+# Models (если скачиваются локально)
+models/
+*.pt
+*.pth
+*.ckpt
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# pytest
+.pytest_cache/
+.coverage

@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.9.0-runtime-ubuntu22.04
+FROM ubuntu:22.04
 
 # Отключение интерактивных запросов во время сборки
 ENV DEBIAN_FRONTEND=noninteractive
@@ -40,7 +40,7 @@ RUN useradd -m -u 1000 -s /bin/bash appuser \
 # Копирование requirements и установка Python зависимостей
 COPY requirements.txt /app/
 RUN pip3 install --no-cache-dir --upgrade pip \
-    && pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124 \
+    && pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu \
     && pip3 install --no-cache-dir -r requirements.txt
 
 # Копирование кода приложения
@@ -50,7 +50,7 @@ RUN chown -R appuser:appuser /app
 # Переключение на пользователя appuser
 USER appuser
 
-# Предзагрузка модели Whisper (optional, для ускорения первого запуска)
+# Предзагрузка модели Whisper
 RUN python3 -c "from faster_whisper import WhisperModel; WhisperModel('large-v3', device='cpu', compute_type='int8')" || true
 
 # Создание точки входа
@@ -64,13 +64,7 @@ if [ -z "$SECRET_ENDPOINT" ] || [ -z "$KEY_DECRYPT" ] || [ -z "$KEY_ENCRYPT" ]; 
     exit 1\n\
 fi\n\
 \n\
-# Проверка GPU (optional)\n\
-if command -v nvidia-smi &> /dev/null; then\n\
-    echo "🎮 GPU Information:"\n\
-    nvidia-smi --query-gpu=name,memory.total,memory.used --format=csv,noheader,nounits | head -1 || echo "GPU info unavailable"\n\
-else\n\
-    echo "⚠️  GPU не обнаружен, используется CPU"\n\
-fi\n\
+echo "🖥️  Запуск в CPU режиме"\n\
 \n\
 # Создание необходимых директорий\n\
 mkdir -p /app/temp /app/logs\n\
